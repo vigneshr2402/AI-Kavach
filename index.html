@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Kavach Dashboard</title>
+    
+    <!-- Chart.js & Socket.io -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+
+    <!-- Custom Styling -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f8f9fa;
+            transition: background 0.3s, color 0.3s;
+        }
+        h1 {
+            color: #ff4757;
+            font-size: 28px;
+        }
+        h2 {
+            color: #3742fa;
+            font-size: 22px;
+        }
+        .container {
+            width: 90%;
+            margin: auto;
+            max-width: 800px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        #logs {
+            width: 100%;
+            height: 250px;
+            overflow-y: auto;
+            border: 2px solid #333;
+            padding: 10px;
+            text-align: left;
+            font-size: 14px;
+            background: #f1f1f1;
+        }
+        .log-entry {
+            padding: 5px;
+            border-bottom: 1px solid #ddd;
+        }
+        .log-entry.WARNING {
+            color: red;
+            font-weight: bold;
+        }
+        .log-entry.INFO {
+            color: #2ed573;
+        }
+        .log-entry.ERROR {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .alert {
+            display: none;
+            padding: 10px;
+            background: red;
+            color: white;
+            font-weight: bold;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        canvas {
+            max-width: 600px;
+            margin: auto;
+            background: white;
+            border-radius: 10px;
+        }
+        /* Dark Mode */
+        .dark-mode {
+            background-color: #121212;
+            color: white;
+        }
+        .dark-mode .container {
+            background-color: #1e1e1e;
+            color: white;
+        }
+        .dark-mode #logs {
+            background-color: #2c2c2c;
+            color: white;
+        }
+        .dark-mode-toggle {
+            margin-top: 10px;
+            padding: 8px 15px;
+            cursor: pointer;
+            background-color: #444;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🚀 AI-Kavach Real-Time Dashboard</h1>
+
+    <button class="dark-mode-toggle" onclick="toggleDarkMode()">Toggle Dark Mode</button>
+
+    <div class="container">
+        <h2>📌 Latest Threat Logs</h2>
+        <div id="logs"></div>
+
+        <div class="alert" id="alert-box"⚠️ Critical Threat Detected! ⚠️</div>
+
+        <h2>📊 Threats Over Time</h2>
+        <canvas id="threatChart"></canvas>
+    </div>
+
+    <script>
+        var socket = io();
+        var logDiv = document.getElementById("logs");
+        var alertBox = document.getElementById("alert-box");
+        var ctx = document.getElementById("threatChart").getContext("2d");
+
+        var threatData = {
+            labels: [],
+            datasets: [{
+                label: 'Threat Count',
+                data: [],
+                borderColor: 'red',
+                backgroundColor: 'rgba(255, 0, 0, 0.2)',
+                borderWidth: 2,
+                tension: 0.3
+            }]
+        };
+
+        var threatChart = new Chart(ctx, {
+            type: 'line',
+            data: threatData,
+            options: {
+                responsive: true,
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+
+        function updateLogs(logs) {
+            logDiv.innerHTML = logs.map(log => {
+                let className = "log-entry " + log.severity;
+                return `<p class="${className}">${log.timestamp} - ${log.severity}: ${log.message}</p>`;
+            }).join("");
+
+            // Auto-scroll to the latest log
+            logDiv.scrollTop = logDiv.scrollHeight;
+
+            let threatCount = logs.filter(log => log.severity === "WARNING" || log.severity === "ERROR").length;
+            let timeLabel = new Date().toLocaleTimeString();
+
+            if (threatData.labels.length > 10) {
+                threatData.labels.shift();
+                threatData.datasets[0].data.shift();
+            }
+
+            threatData.labels.push(timeLabel);
+            threatData.datasets[0].data.push(threatCount);
+            threatChart.update();
+
+            if (threatCount > 0) {
+                alertBox.style.display = "block";
+                setTimeout(() => { alertBox.style.display = "none"; }, 5000);
+            }
+        }
+
+        function fetchLogs() {
+            fetch("/logs")
+                .then(response => response.json())
+                .then(data => updateLogs(data))
+                .catch(error => console.error("Error fetching logs:", error));
+        }
+
+        socket.on("log_update", function(data) { updateLogs(data.logs); });
+
+        setInterval(fetchLogs, 5000);
+
+        // Dark Mode Toggle
+        function toggleDarkMode() {
+            document.body.classList.toggle("dark-mode");
+            let isDarkMode = document.body.classList.contains("dark-mode");
+            localStorage.setItem("darkMode", isDarkMode);
+        }
+
+        // Load dark mode preference
+        if (localStorage.getItem("darkMode") === "true") {
+            document.body.classList.add("dark-mode");
+        }
+    </script>
+
+</body>
+</html>

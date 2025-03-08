@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Kavach Threat Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.js"></script>
+</head>
+<body>
+    <div class="navbar">
+        <h1>AI-Kavach Dashboard</h1>
+    </div>
+
+    <div class="container">
+        <div class="card log-card">
+            <h2>Live Threat Logs</h2>
+            <div id="log-container"></div>
+        </div>
+
+        <div class="card">
+            <h2>Threats Over Time</h2>
+            <canvas id="threatChart"></canvas>
+        </div>
+
+        <div class="card">
+            <h2>Top Attack Sources</h2>
+            <canvas id="attackSourceChart"></canvas>
+        </div>
+
+        <!-- ✅ Suspicious URLs Table -->
+        <div class="card">
+            <h2>Suspicious URLs Detected</h2>
+            <table id="suspicious-url-table">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>URL</th>
+                        <th>Reason</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h2>Check Suspicious URL</h2>
+            <form id="check-url-form">
+                <input type="text" id="url-input" placeholder="Enter URL" required>
+                <button type="submit">Check</button>
+            </form>
+            <div id="url-check-result"></div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
